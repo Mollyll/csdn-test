@@ -1,7 +1,7 @@
-# csdn-test
+# csdn-test branch for updateWebpack
 
-This is a simple program just for testing.
+This is a branch about the configration change when we update Webpack3 to Webpack4.
 
-If you want to understand how to config Webpack simply, please read my blog in CSDN.
+The most important file is the package.json and webpack.config.js. We have to change the versions of the used packages. And some configuration in webpack.
 
-The address: https://blog.csdn.net/Ariana_l/article/details/87977479
+The blog address: I haven't publish yet. I'll publish it a few days later. Thank you!
