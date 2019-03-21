@@ -1,7 +1,10 @@
 const path = require('path') // 根路径
 const HTMLPlugin = require('html-webpack-plugin') // 编译模板插件
 const webpack = require('webpack')
-const ExtractPlugin = require('extract-text-webpack-plugin') // 抽离css
+
+const miniCssExtractPlugin = require('mini-css-extract-plugin')
+const UglifyJsPlugin = require("uglifyjs-webpack-plugin");
+const OptimizeCSSAssetsPlugin = require("optimize-css-assets-webpack-plugin");
 
 const isDev = process.env.NODE_ENV === 'development' // 判断环境
 
@@ -14,15 +17,12 @@ const config = {
     },
     module: {
         rules: [{
-            test: /\.vue$/,
-            loader: 'vue-loader'
-        }, {
             test: /\.jsx$/,
             loader: 'babel-loader'
         }, {
             test: /\.js$/,
             loader: 'babel-loader',
-            exclude: /node_modules/
+            exclude: /(node_modules|bower_components)/
         }, {
             test: /\.(gif|jpg|jpeg|png|svg)$/,
             use: [{
@@ -83,38 +83,50 @@ if (isDev) {
         new webpack.NoEmitOnErrorsPlugin()
     )
 } else { // 正式环境下要抽离css
-    config.entry = {
-        app: path.join(__dirname, 'src/index.js'),
-        vendor: ['vue'] // 标明依赖的第三方库
-    }
-    config.output.filename = '[name].[chunkhash:8].js'
+    config.output.filename = '[name].bundle.js'
     config.module.rules.push(
         {
             test: /\.(styl|css)/,
-            use: ExtractPlugin.extract({
-                fallback: 'style-loader',
-                use: [
-                    'css-loader',
-                    {
-                        loader: 'postcss-loader',
-                        options: {
-                            sourceMap: true,
-                        }
-                    },
-                    'stylus-loader'
-                ]
-            })
+            use: [
+                miniCssExtractPlugin.loader,
+                'css-loader',
+                {
+                    loader: 'postcss-loader',
+                    options: {
+                        sourceMap: true,
+                    }
+                },
+                'stylus-loader'
+            ]
         },
     )
+    config.optimization =  {
+        minimizer: [
+            new UglifyJsPlugin({
+                cache: true,
+                parallel: true,
+                sourceMap: true // set to true if you want JS source maps
+            }),
+            new OptimizeCSSAssetsPlugin({})
+        ],
+            splitChunks: {
+            chunks: 'all' // 默认将js代码打包到vendor里面
+        },
+        runtimeChunk: true // 将除了entry里面指定的js的name的时候，其他的js放到runtime里面去
+    };
     config.plugins.push(
-        new ExtractPlugin('styles.[contentHash:8].css'),
-        // 打包第三方库
-        new webpack.optimize.CommonsChunkPlugin({
-            name: 'vendor'
-        }),
-        new webpack.optimize.CommonsChunkPlugin({
-            name: 'runtime'
+        new miniCssExtractPlugin({
+            filename: "style.[contenthash:8].css",
+            chunkFilename: "chunk.[contenthash:8].css"
         })
+        // new ExtractPlugin('styles.[contentHash:8].css'),
+        // // 打包第三方库
+        // new webpack.optimize.CommonsChunkPlugin({
+        //     name: 'vendor'
+        // }),
+        // new webpack.optimize.CommonsChunkPlugin({
+        //     name: 'runtime'
+        // })
     )
 }
 
